@@ -17,5 +17,17 @@ VISUAL_EFFECTS=true
 # Votre pseudo Star Citizen (pour les stats K/D uniquement, ne filtre PAS l'affichage)
 NAME=VotrePseudo
 
+[OVERLAY]
+# Position de l'overlay (top-right, top-left, bottom-right, bottom-left)
+POSITION=top-right
+# Largeur de l'overlay en pixels
+WIDTH=450
+# Hauteur de l'overlay en pixels
+HEIGHT=400
+# Nombre maximum de kills affichés
+MAX_KILLS=10
+# Transparence (0.0 à 1.0)
+ALPHA=0.95
+
 [DEBUG]
 ENABLED=false
