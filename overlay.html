@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kill Feed Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: transparent;
+            color: white;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Rend l'overlay non-interactif */
+        }
+        #overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 9999;
+        }
+        .kill-item {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <h3>Kill Feed</h3>
+        <div id="kill-list">
+            <!-- Les kills apparaîtront ici -->
+        </div>
+    </div>
+
+    <script src="./config.js"></script>
+    <script>
+        // Connexion WebSocket via config serveur
+        const wsUrl = (window.KF && window.KF.ws_url) || (window.CONFIG ? `ws://${window.CONFIG.wsHost}:${window.CONFIG.wsPort}` : 'ws://127.0.0.1:8765');
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = function() {
+            console.log('Connecté à l\'overlay');
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'kill') {
+                addKill(data);
+            }
+        };
+
+        function addKill(killData) {
+            const killList = document.getElementById('kill-list');
+            const killItem = document.createElement('div');
+            killItem.className = 'kill-item';
+            killItem.textContent = `${killData.player} a tué ${killData.target}`;
+            killList.appendChild(killItem);
+
+            // Limiter à 10 éléments pour éviter l'encombrement
+            while (killList.children.length > 10) {
+                killList.removeChild(killList.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

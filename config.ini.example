@@ -1,0 +1,21 @@
+[SETTINGS]
+# Chemin vers le dossier LIVE de Star Citizen (ou directement vers Game.log)
+GAME_LOG_PATH=C:\Users\VotreNom\AppData\Local\StarCitizen\LIVE
+
+[INTERFACE]
+HTTP_PORT=8081
+WEBSOCKET_PORT=8765
+AUTO_OPEN_BROWSER=true
+
+[DISPLAY]
+MAX_KILLS_DISPLAY=100
+MAX_KILLS_HISTORY=1000
+SOUND_EFFECTS=true
+VISUAL_EFFECTS=true
+
+[PLAYER]
+# Votre pseudo Star Citizen (pour les stats K/D uniquement, ne filtre PAS l'affichage)
+NAME=VotrePseudo
+
+[DEBUG]
+ENABLED=false

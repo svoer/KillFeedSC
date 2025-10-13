@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Star Citizen Kill Feed</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #0f1420;
+      --bg-card: #141824;
+      --accent-blue: #00d9ff;
+      --accent-cyan: #5bd0ff;
+      --text-primary: #e7f3ff;
+      --text-secondary: #9db3c8;
+      --text-muted: #6b7a8f;
+      --border-color: #1e2a3f;
+      --success: #28ffa7;
+      --danger: #ff6b6b;
+      --warning: #ffa726;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #060a14 100%);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.98), rgba(15, 20, 32, 0.95));
+      backdrop-filter: blur(20px);
+      border-bottom: 2px solid rgba(0, 217, 255, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.4));
+      animation: logoGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes logoGlow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.4)); }
+      50% { filter: drop-shadow(0 0 16px rgba(0, 217, 255, 0.6)); }
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: -4px;
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .stat-chip {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(91, 208, 255, 0.05));
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 90px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-chip::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .stat-chip:hover::before {
+      left: 100%;
+    }
+
+    .stat-chip:hover {
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(91, 208, 255, 0.1));
+      border-color: rgba(0, 217, 255, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 217, 255, 0.3);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .player-input-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 217, 255, 0.05);
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      border-radius: 10px;
+      padding: 8px 16px;
+      transition: all 0.3s ease;
+    }
+
+    .player-input-container:focus-within {
+      background: rgba(0, 217, 255, 0.1);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 16px rgba(0, 217, 255, 0.3);
+    }
+
+    .player-input-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .player-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      width: 150px;
+      padding: 4px;
+    }
+
+    .player-input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    .btn-validate {
+      background: linear-gradient(135deg, rgba(40, 255, 167, 0.15), rgba(40, 255, 167, 0.05));
+      border: 1px solid rgba(40, 255, 167, 0.4);
+      border-radius: 8px;
+      color: var(--success);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-validate:hover {
+      background: linear-gradient(135deg, rgba(40, 255, 167, 0.25), rgba(40, 255, 167, 0.15));
+      border-color: var(--success);
+      transform: scale(1.1);
+      box-shadow: 0 0 16px rgba(40, 255, 167, 0.4);
+    }
+
+    .btn-validate:active {
+      transform: scale(0.95);
+    }
+
+    .btn {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(91, 208, 255, 0.05));
+      border: 1px solid rgba(0, 217, 255, 0.4);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 107, 107, 0.05));
+      border-color: rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.25), rgba(255, 107, 107, 0.15));
+      border-color: var(--danger);
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.25), rgba(91, 208, 255, 0.15));
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 1920px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+    }
+
+    .feed-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hostility-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .column-header {
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(91, 208, 255, 0.05));
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .column-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--accent-cyan), var(--accent-blue));
+    }
+
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .hostility-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    /* Scrollbar styling */
+    .feed::-webkit-scrollbar,
+    .hostility-feed::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .feed::-webkit-scrollbar-track,
+    .hostility-feed::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    .feed::-webkit-scrollbar-thumb,
+    .hostility-feed::-webkit-scrollbar-thumb {
+      background: rgba(0, 217, 255, 0.3);
+      border-radius: 4px;
+    }
+
+    .feed::-webkit-scrollbar-thumb:hover,
+    .hostility-feed::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 217, 255, 0.5);
+    }
+
+    /* Kill Card */
+    .kill-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(20, 24, 36, 0.8) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    .kill-card.player-kill {
+      border-color: rgba(0, 217, 255, 0.5);
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.08), rgba(20, 24, 36, 0.9) 100%);
+    }
+
+    .kill-card.player-death {
+      border-color: rgba(255, 107, 107, 0.5);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.08), rgba(20, 24, 36, 0.9) 100%);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .kill-card:hover {
+      border-color: rgba(0, 217, 255, 0.4);
+      transform: translateX(4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .kill-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--accent-cyan), var(--accent-blue));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .kill-card:hover::before {
+      opacity: 1;
+    }
+
+    .kill-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .kill-type {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kill-type.normal {
+      background: rgba(0, 217, 255, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 217, 255, 0.3);
+    }
+
+    .kill-type.suicide {
+      background: rgba(255, 107, 107, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+
+    .kill-type.crash {
+      background: rgba(255, 167, 38, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(255, 167, 38, 0.3);
+    }
+
+    .kill-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .player-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .player-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player-name.killer {
+      color: var(--accent-cyan);
+    }
+
+    .player-name.victim {
+      color: #ff8a80;
+    }
+
+    .rsi-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: rgba(0, 217, 255, 0.1);
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      border-radius: 6px;
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .rsi-link:hover {
+      background: rgba(0, 217, 255, 0.2);
+      border-color: var(--accent-cyan);
+      transform: translateY(-1px);
+    }
+
+    .ship-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(91, 208, 255, 0.1);
+      border: 1px solid rgba(91, 208, 255, 0.25);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .ship-icon {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    .kill-arrow {
+      font-size: 24px;
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    .kill-description {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(30, 42, 63, 0.5);
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* Hostility Card */
+    .hostility-card {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 107, 107, 0.05));
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      animation: slideInRight 0.4s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+    }
+
+    .hostility-card:hover {
+      border-color: rgba(255, 107, 107, 0.6);
+      transform: translateX(-4px);
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.2);
+    }
+
+    .hostility-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--danger), #ff8a80);
+    }
+
+    .hostility-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .hostility-badge {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(255, 107, 107, 0.2);
+      color: var(--danger);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+    }
+
+    .hostility-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hostility-player {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .hostility-attacker {
+      color: var(--danger);
+    }
+
+    .hostility-target {
+      color: var(--warning);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+
+      .hostility-column {
+        order: -1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      .header-left {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .stats-container {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .controls {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn {
+        flex: 1;
+        min-width: 120px;
+      }
+
+      .kill-content {
+        flex-direction: column;
+      }
+
+      .timestamp {
+        display: none;
+      }
+
+      .feed,
+      .hostility-feed {
+        max-height: 400px;
+      }
+    }
+
+    /* Loading Animation */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0, 217, 255, 0.1);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 16px;
+      font-weight: 500;
+    }
+  </style>
+  <script src="./config.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <div class="logo-container">
+        <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#00d9ff;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#5bd0ff;stop-opacity:1" />
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <!-- Cercles extérieurs -->
+          <circle cx="100" cy="100" r="85" fill="none" stroke="url(#logoGrad)" stroke-width="1.5" opacity="0.3"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="url(#logoGrad)" stroke-width="2" opacity="0.5"/>
+          <circle cx="100" cy="100" r="55" fill="none" stroke="url(#logoGrad)" stroke-width="1" opacity="0.4"/>
+          
+          <!-- Croix principale (mire) -->
+          <line x1="100" y1="20" x2="100" y2="80" stroke="url(#logoGrad)" stroke-width="3" filter="url(#glow)"/>
+          <line x1="100" y1="120" x2="100" y2="180" stroke="url(#logoGrad)" stroke-width="3" filter="url(#glow)"/>
+          <line x1="20" y1="100" x2="80" y2="100" stroke="url(#logoGrad)" stroke-width="3" filter="url(#glow)"/>
+          <line x1="120" y1="100" x2="180" y2="100" stroke="url(#logoGrad)" stroke-width="3" filter="url(#glow)"/>
+          
+          <!-- Point central -->
+          <circle cx="100" cy="100" r="8" fill="url(#logoGrad)" opacity="0.8" filter="url(#glow)"/>
+          <circle cx="100" cy="100" r="4" fill="#fff" opacity="0.9"/>
+          
+          <!-- Marqueurs de distance (comme une vraie mire) -->
+          <line x1="95" y1="40" x2="105" y2="40" stroke="url(#logoGrad)" stroke-width="2" opacity="0.6"/>
+          <line x1="95" y1="160" x2="105" y2="160" stroke="url(#logoGrad)" stroke-width="2" opacity="0.6"/>
+          <line x1="40" y1="95" x2="40" y2="105" stroke="url(#logoGrad)" stroke-width="2" opacity="0.6"/>
+          <line x1="160" y1="95" x2="160" y2="105" stroke="url(#logoGrad)" stroke-width="2" opacity="0.6"/>
+          
+          <!-- Coins de cadrage -->
+          <path d="M 30 30 L 30 45 M 30 30 L 45 30" stroke="url(#logoGrad)" stroke-width="2" opacity="0.5"/>
+          <path d="M 170 30 L 170 45 M 170 30 L 155 30" stroke="url(#logoGrad)" stroke-width="2" opacity="0.5"/>
+          <path d="M 30 170 L 30 155 M 30 170 L 45 170" stroke="url(#logoGrad)" stroke-width="2" opacity="0.5"/>
+          <path d="M 170 170 L 170 155 M 170 170 L 155 170" stroke="url(#logoGrad)" stroke-width="2" opacity="0.5"/>
+        </svg>
+        <div>
+          <h1 class="title">KILL FEED</h1>
+          <div class="subtitle">Star Citizen</div>
+        </div>
+      </div>
+      <div class="status-indicator"></div>
+    </div>
+    
+    <div class="stats-container">
+      <div class="stat-chip">
+        <div class="stat-label">Kills</div>
+        <div class="stat-value" id="kills">0</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-label">Deaths</div>
+        <div class="stat-value" id="deaths">0</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-label">K/D</div>
+        <div class="stat-value" id="kd">0.00</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="player-input-container">
+        <span class="player-input-label">👤 Pseudo:</span>
+        <input type="text" class="player-input" id="playerNameInput" placeholder="Votre pseudo...">
+        <button class="btn-validate" id="btnValidateName" title="Valider le pseudo">✓</button>
+      </div>
+      <button class="btn btn-danger" id="btnClearAll">🗑️ Clear</button>
+      <button class="btn" id="btnOpenOverlay" title="Ouvrir l'overlay (fenêtre flottante)">🖥️ Ouvrir Overlay</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="feed-column">
+      <div class="column-header">
+        ⚡ KILL FEED
+      </div>
+      <div id="feed" class="feed">
+        <div class="loading">
+          <div class="spinner"></div>
+          <span>En attente d'événements...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hostility-column">
+      <div class="column-header">
+        ⚠️ HOSTILITY
+      </div>
+      <div id="hostilityFeed" class="hostility-feed">
+        <div class="empty-state">
+          <div class="empty-state-icon">🛡️</div>
+          <div class="empty-state-text">Aucune hostilité détectée</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const FEED = document.getElementById('feed');
+    const HOSTILITY_FEED = document.getElementById('hostilityFeed');
+    const killsEl = document.getElementById('kills');
+    const deathsEl = document.getElementById('deaths');
+    const kdEl = document.getElementById('kd');
+    const playerNameInput = document.getElementById('playerNameInput');
+    
+    let playerName = localStorage.getItem('sc_player_name') || '';
+    let kills = 0;
+    let deaths = 0;
+    let ws;
+    let keepAlive;
+    let hasEvents = false;
+    let hasHostilityEvents = false;
+
+    // Initialiser le champ de pseudo
+    if (playerName) {
+      playerNameInput.value = playerName;
+    }
+
+    // Fonction pour valider le pseudo
+    function validatePlayerName() {
+      const newName = playerNameInput.value.trim();
+      if (newName) {
+        playerName = newName;
+        localStorage.setItem('sc_player_name', playerName);
+        console.log('[KillFeed] Pseudo défini:', playerName);
+        
+        // Effet visuel de confirmation
+        playerNameInput.style.borderColor = 'var(--success)';
+        setTimeout(() => {
+          playerNameInput.style.borderColor = '';
+        }, 1000);
+        
+        // Recalculer les stats
+        recalculateStats();
+        
+        // Notification visuelle
+        showNotification(`Pseudo défini: ${playerName}`);
+      }
+    }
+
+    // Bouton de validation
+    document.getElementById('btnValidateName').addEventListener('click', validatePlayerName);
+
+    // Validation avec la touche Enter
+    playerNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        validatePlayerName();
+      }
+    });
+
+    // Fonction de notification
+    function showNotification(message) {
+      const notif = document.createElement('div');
+      notif.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 24px;
+        background: linear-gradient(135deg, rgba(40, 255, 167, 0.2), rgba(40, 255, 167, 0.1));
+        border: 1px solid var(--success);
+        border-radius: 12px;
+        padding: 16px 24px;
+        color: var(--text-primary);
+        font-weight: 600;
+        z-index: 1000;
+        animation: slideInRight 0.3s ease-out;
+        box-shadow: 0 4px 16px rgba(40, 255, 167, 0.3);
+      `;
+      notif.textContent = message;
+      document.body.appendChild(notif);
+      
+      setTimeout(() => {
+        notif.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notif.remove(), 300);
+      }, 3000);
+    }
+
+    function recalculateStats() {
+      // Cette fonction sera appelée pour recalculer depuis l'historique
+      kills = 0;
+      deaths = 0;
+      
+      // Parcourir tous les événements affichés
+      const killCards = FEED.querySelectorAll('.kill-card');
+      killCards.forEach(card => {
+        const killerName = card.dataset.killer;
+        const victimName = card.dataset.victim;
+        
+        if (playerName && killerName && killerName.toLowerCase() === playerName.toLowerCase()) {
+          kills++;
+        }
+        if (playerName && victimName && victimName.toLowerCase() === playerName.toLowerCase()) {
+          deaths++;
+        }
+      });
+      
+      updateStats();
+    }
+
+    function updateStats() {
+      killsEl.textContent = kills;
+      deathsEl.textContent = deaths;
+      kdEl.textContent = deaths === 0 ? kills.toFixed(2) : (kills / deaths).toFixed(2);
+    }
+
+    function esc(s) {
+      return (s ?? '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[m]));
+    }
+
+    function rsiUrl(name) {
+      // Nettoyer le nom pour l'URL RSI (enlever apostrophes, etc.)
+      const cleanName = (name || '').replace(/['"`]/g, '').trim();
+      return `https://robertsspaceindustries.com/citizens/${encodeURIComponent(cleanName)}`;
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getKillType(evt) {
+      if (evt.is_suicide || evt.type === 'suicide') return 'suicide';
+      if (evt.is_crash) return 'crash';
+      return 'normal';
+    }
+
+    function isEntityId(name) {
+      // Détecter les IDs d'entités (ex: ANVL_Arrow_651076209584)
+      if (!name) return true;
+      if (name.includes('_')) {
+        const parts = name.split('_');
+        if (parts.length >= 2) {
+          const lastPart = parts[parts.length - 1];
+          if (/^\d{9,}$/.test(lastPart)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function createPlayerInfo(name, ship, isKiller = false) {
+      const className = isKiller ? 'killer' : 'victim';
+      
+      // Filtrer les IDs d'entités
+      if (isEntityId(name)) {
+        name = ship || 'Inconnu';
+        ship = null; // Ne pas afficher le ship deux fois
+      }
+      
+      return `
+        <div class="player-info">
+          <div class="player-name ${className}">
+            <span>${esc(name || 'Inconnu')}</span>
+            ${!isEntityId(name) ? `
+              <a href="${rsiUrl(name)}" target="_blank" rel="noopener" class="rsi-link" title="Voir le profil RSI">
+                RSI ↗
+              </a>
+            ` : ''}
+          </div>
+          ${ship ? `
+            <div class="ship-badge">
+              <svg class="ship-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              <span>${esc(ship)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function addKill(evt) {
+      if (!hasEvents) {
+        FEED.innerHTML = '';
+        hasEvents = true;
+      }
+
+      const killType = getKillType(evt);
+      const time = formatTime(evt.timestamp || evt.ts);
+      const killer = evt.killer;
+      const victim = evt.victim || 'Inconnu';
+      const killerShip = evt.killer_vehicle || evt.killer_ship;
+      const victimShip = evt.victim_vehicle || evt.victim_ship;
+      const description = evt.sentence_fr || evt.quip || evt.message || makeDefaultMessage(evt);
+
+      // Mettre à jour les stats si c'est le joueur
+      let playerClass = '';
+      if (playerName) {
+        if (killer && killer.toLowerCase() === playerName.toLowerCase()) {
+          kills++;
+          playerClass = 'player-kill';
+        }
+        if (victim && victim.toLowerCase() === playerName.toLowerCase()) {
+          deaths++;
+          playerClass = 'player-death';
+        }
+        updateStats();
+      }
+
+      const html = `
+        <div class="kill-card ${playerClass}" data-killer="${esc(killer || '')}" data-victim="${esc(victim || '')}">
+          <div class="kill-header">
+            <span class="timestamp">${esc(time)}</span>
+            <span class="kill-type ${killType}">
+              ${killType === 'suicide' ? '💀 Suicide' : killType === 'crash' ? '💥 Crash' : '⚔️ Combat'}
+            </span>
+          </div>
+          <div class="kill-content">
+            ${killer && !evt.is_suicide && evt.type !== 'suicide' ? createPlayerInfo(killer, killerShip, true) : ''}
+            ${killer && !evt.is_suicide && evt.type !== 'suicide' ? '<div class="kill-arrow">→</div>' : ''}
+            ${createPlayerInfo(victim, victimShip, false)}
+          </div>
+          ${description ? `<div class="kill-description">${esc(description)}</div>` : ''}
+        </div>
+      `;
+
+      FEED.insertAdjacentHTML('afterbegin', html);
+
+      const maxDisplay = window.KF?.maxDisplay || 100;
+      while (FEED.children.length > maxDisplay) {
+        FEED.lastElementChild?.remove();
+      }
+    }
+
+    function makeDefaultMessage(evt) {
+      if (evt.is_suicide || evt.type === 'suicide') {
+        return `${evt.victim} s'est éliminé(e)`;
+      }
+      if (evt.is_crash) {
+        return `${evt.victim} s'est écrasé(e)`;
+      }
+      return `${evt.killer || 'Inconnu'} a éliminé ${evt.victim || 'Inconnu'}`;
+    }
+
+    function addHostility(evt) {
+      if (!hasHostilityEvents) {
+        HOSTILITY_FEED.innerHTML = '';
+        hasHostilityEvents = true;
+      }
+
+      const time = formatTime(evt.timestamp || evt.ts);
+      const attacker = evt.attacker || 'Inconnu';
+      const target = evt.target || 'Inconnu';
+
+      const html = `
+        <div class="hostility-card">
+          <div class="hostility-header">
+            <span class="timestamp">${esc(time)}</span>
+            <span class="hostility-badge">⚔️ Hostile</span>
+          </div>
+          <div class="hostility-content">
+            ${createPlayerInfo(attacker, null, true)}
+            <div class="kill-arrow" style="font-size: 18px; color: var(--danger);">→</div>
+            ${createPlayerInfo(target, null, false)}
+          </div>
+        </div>
+      `;
+
+      HOSTILITY_FEED.insertAdjacentHTML('afterbegin', html);
+
+      const maxDisplay = 50;
+      while (HOSTILITY_FEED.children.length > maxDisplay) {
+        HOSTILITY_FEED.lastElementChild?.remove();
+      }
+    }
+
+    function connect() {
+      const wsUrl = window.KF?.ws_url || 'ws://127.0.0.1:8765';
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('✅ Connecté au serveur WebSocket');
+        keepAlive = setInterval(() => {
+          if (ws?.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 15000);
+      };
+
+    // Ouvrir l'overlay dans une nouvelle fenêtre dédiée
+    document.getElementById('btnOpenOverlay').onclick = () => {
+      const features = [
+        'width=380',
+        'height=600',
+        'menubar=no',
+        'toolbar=no',
+        'location=no',
+        'status=no',
+        'resizable=yes',
+        'scrollbars=no'
+      ].join(',');
+      const w = window.open('overlay.html', 'KillFeedOverlay', features);
+      if (!w) {
+        alert("Impossible d'ouvrir la fenêtre. Veuillez autoriser les pop-ups pour ce site.");
+      }
+    };
+
+      ws.onclose = () => {
+        console.log('❌ Déconnecté du serveur WebSocket');
+        clearInterval(keepAlive);
+        setTimeout(connect, 1200);
+      };
+
+      ws.onerror = (error) => {
+        console.error('❌ Erreur WebSocket:', error);
+      };
+
+      ws.onmessage = (ev) => {
+        let msg;
+        try {
+          msg = JSON.parse(ev.data);
+        } catch (e) {
+          console.error('Erreur de parsing JSON:', e);
+          return;
+        }
+
+        if (msg.type === 'history_snapshot') {
+          msg.items?.forEach(addKill);
+        } else if (msg.type === 'kill' || msg.type === 'death' || msg.type === 'suicide') {
+          addKill(msg);
+        } else if (msg.type === 'hostility') {
+          addHostility(msg);
+        } else if (msg.type === 'player_stats') {
+          kdEl.textContent = msg.player_stats?.kd_ratio ?? '0.00';
+        }
+      };
+    }
+
+    document.getElementById('btnClearAll').onclick = () => {
+      if (confirm('Voulez-vous vraiment effacer tout l\'historique et réinitialiser les stats ?')) {
+        FEED.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚀</div><div class="empty-state-text">Historique effacé</div></div>';
+        HOSTILITY_FEED.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛡️</div><div class="empty-state-text">Aucune hostilité détectée</div></div>';
+        kills = 0;
+        deaths = 0;
+        hasEvents = false;
+        hasHostilityEvents = false;
+        updateStats();
+      }
+    };
+
+    connect();
+  </script>
+</body>
+</html>
