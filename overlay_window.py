@@ -93,22 +93,42 @@ class KillFeedOverlay:
         self.font_kill = tkfont.Font(family='Segoe UI', size=11, weight='bold')
         self.font_small = tkfont.Font(family='Segoe UI', size=9)
         
-        # Bouton ON/OFF (petit, discret, en haut à droite)
-        self.btn_toggle = tk.Button(
+        # Bouton CLOSE (rouge, visible, en haut à droite)
+        self.btn_close = tk.Button(
             self.root,
-            text="✕",
+            text="✕ CLOSE",
             command=self.quit,
-            bg='#1a1a1a',
-            fg='#ff4757',
-            activebackground='#ff4757',
+            bg='#ff4757',
+            fg='white',
+            activebackground='#ff1744',
             activeforeground='white',
-            font=('Segoe UI', 10, 'bold'),
+            font=('Segoe UI', 9, 'bold'),
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor='hand2',
+            relief='flat'
+        )
+        self.btn_close.place(x=OVERLAY_WIDTH - 85, y=5)
+        
+        # Bouton HIDE (orange, pour masquer temporairement)
+        self.is_hidden = False
+        self.btn_hide = tk.Button(
+            self.root,
+            text="⊟",
+            command=self._toggle_visibility,
+            bg='#ffa726',
+            fg='white',
+            activebackground='#ff9800',
+            activeforeground='white',
+            font=('Segoe UI', 9, 'bold'),
             bd=0,
             padx=8,
-            pady=2,
-            cursor='hand2'
+            pady=4,
+            cursor='hand2',
+            relief='flat'
         )
-        self.btn_toggle.place(x=OVERLAY_WIDTH - 35, y=5)
+        self.btn_hide.place(x=OVERLAY_WIDTH - 120, y=5)
         
     def _setup_keybindings(self):
         """Configure les raccourcis clavier"""
@@ -123,11 +143,15 @@ class KillFeedOverlay:
         
     def _toggle_visibility(self):
         """Masque/affiche l'overlay"""
-        current_alpha = self.root.attributes('-alpha')
-        if current_alpha > 0.1:
-            self.root.attributes('-alpha', 0.0)
+        self.is_hidden = not self.is_hidden
+        if self.is_hidden:
+            # Masquer complètement
+            self.root.withdraw()
+            self.btn_hide.config(text="⊞", bg='#28ffa7')
         else:
-            self.root.attributes('-alpha', 0.95)
+            # Réafficher
+            self.root.deiconify()
+            self.btn_hide.config(text="⊟", bg='#ffa726')
     
     def _format_kill_text(self, evt: Dict) -> tuple[str, str]:
         """Formate le texte d'un kill et retourne (texte, couleur)"""
