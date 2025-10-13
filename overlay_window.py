@@ -93,6 +93,23 @@ class KillFeedOverlay:
         self.font_kill = tkfont.Font(family='Segoe UI', size=11, weight='bold')
         self.font_small = tkfont.Font(family='Segoe UI', size=9)
         
+        # Bouton ON/OFF (petit, discret, en haut à droite)
+        self.btn_toggle = tk.Button(
+            self.root,
+            text="✕",
+            command=self.quit,
+            bg='#1a1a1a',
+            fg='#ff4757',
+            activebackground='#ff4757',
+            activeforeground='white',
+            font=('Segoe UI', 10, 'bold'),
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor='hand2'
+        )
+        self.btn_toggle.place(x=OVERLAY_WIDTH - 35, y=5)
+        
     def _setup_keybindings(self):
         """Configure les raccourcis clavier"""
         # F12 pour masquer/afficher
@@ -300,17 +317,20 @@ class KillFeedOverlay:
                 await asyncio.sleep(2)  # Attendre avant de reconnecter
     
     def quit(self):
-        """Ferme l'overlay proprement"""
+        """Ferme l'overlay proprement et immédiatement"""
         print("[Overlay] Fermeture...")
         self.running = False
-        if self.ws:
-            try:
-                asyncio.run(self.ws.close())
-            except:
-                pass
-        self.root.quit()
-        self.root.destroy()
-        sys.exit(0)
+        
+        # Fermer la fenêtre immédiatement
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except:
+            pass
+        
+        # Forcer la sortie du processus
+        import os
+        os._exit(0)
     
     def run(self):
         """Lance la boucle principale Tkinter"""

@@ -803,7 +803,6 @@
         <button class="btn-validate" id="btnValidateName" title="Valider le pseudo">✓</button>
       </div>
       <button class="btn btn-danger" id="btnClearAll">🗑️ Clear</button>
-      <button class="btn" id="btnOpenOverlay" title="Ouvrir l'overlay (fenêtre flottante)">🖥️ Ouvrir Overlay</button>
     </div>
   </header>
 
@@ -1122,23 +1121,6 @@
         }, 15000);
       };
 
-    // Ouvrir l'overlay dans une nouvelle fenêtre dédiée
-    document.getElementById('btnOpenOverlay').onclick = () => {
-      const features = [
-        'width=380',
-        'height=600',
-        'menubar=no',
-        'toolbar=no',
-        'location=no',
-        'status=no',
-        'resizable=yes',
-        'scrollbars=no'
-      ].join(',');
-      const w = window.open('overlay.html', 'KillFeedOverlay', features);
-      if (!w) {
-        alert("Impossible d'ouvrir la fenêtre. Veuillez autoriser les pop-ups pour ce site.");
-      }
-    };
 
       ws.onclose = () => {
         console.log('❌ Déconnecté du serveur WebSocket');

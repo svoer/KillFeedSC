@@ -79,8 +79,12 @@ python overlay_window.py
 💀 VHALAR (Arrow) - Suicide
 ```
 
-## ⌨️ Raccourcis clavier
+## ⌨️ Contrôles
 
+### Bouton de fermeture
+- **✕** (bouton rouge en haut à droite) - Ferme l'overlay immédiatement
+
+### Raccourcis clavier
 - **F12** - Masquer/Afficher l'overlay
 - **Esc** - Quitter l'overlay
 - **Ctrl+Q** - Quitter l'overlay
