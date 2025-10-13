@@ -329,6 +329,11 @@ class KillFeedOverlay:
                             # Traiter les événements de kill
                             elif data.get('type') in ('kill', 'death', 'suicide'):
                                 self.add_kill(data)
+                            
+                            # Commande de fermeture depuis l'interface web
+                            elif data.get('type') == 'close_overlay':
+                                print("[Overlay] Commande de fermeture reçue depuis l'interface web")
+                                self.quit()
                                 
                         except json.JSONDecodeError:
                             pass

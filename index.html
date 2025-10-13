@@ -803,6 +803,7 @@
         <button class="btn-validate" id="btnValidateName" title="Valider le pseudo">✓</button>
       </div>
       <button class="btn btn-danger" id="btnClearAll">🗑️ Clear</button>
+      <button class="btn" id="btnCloseOverlay" title="Fermer l'overlay (si lancé)">✕ Fermer Overlay</button>
     </div>
   </header>
 
@@ -1162,6 +1163,25 @@
         hasEvents = false;
         hasHostilityEvents = false;
         updateStats();
+      }
+    };
+
+    document.getElementById('btnCloseOverlay').onclick = () => {
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'close_overlay' }));
+        console.log('✅ Commande de fermeture envoyée à l\'overlay');
+        
+        // Feedback visuel
+        const btn = document.getElementById('btnCloseOverlay');
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Commande envoyée';
+        btn.style.backgroundColor = '#28ffa7';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.backgroundColor = '';
+        }, 2000);
+      } else {
+        alert('WebSocket non connecté. Impossible d\'envoyer la commande.');
       }
     };
 

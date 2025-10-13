@@ -1045,9 +1045,23 @@ async def ws_handler(ws):
         }
         await ws.send(json.dumps(hello, ensure_ascii=False))
 
-        async for _ in ws:
-            # Le client peut ignorer: on ne traite pas de messages entrants
-            pass
+        async for message in ws:
+            # Traiter les commandes entrantes
+            try:
+                data = json.loads(message)
+                cmd_type = data.get("type")
+                
+                # Commande pour fermer l'overlay
+                if cmd_type == "close_overlay":
+                    # Broadcaster la commande à tous les clients (y compris l'overlay)
+                    await broadcast({"type": "close_overlay"})
+                    debug_print("[WS] Commande close_overlay envoyée")
+                    
+            except json.JSONDecodeError:
+                pass
+            except Exception as e:
+                if DEBUG:
+                    print(f"[WS] Erreur traitement message: {e}")
     except Exception:
         if DEBUG:
             traceback.print_exc()
