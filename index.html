@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Star Citizen Kill Feed</title>
   <link rel="icon" href="data:,">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0e1a;
-      --bg-secondary: #0f1420;
-      --bg-card: #141824;
-      --accent-blue: #00d9ff;
-      --accent-cyan: #5bd0ff;
-      --text-primary: #e7f3ff;
-      --text-secondary: #9db3c8;
-      --text-muted: #6b7a8f;
-      --border-color: #1e2a3f;
+      --bg-primary: #0a1d2a; /* Deep navy */
+      --bg-secondary: #0e2738; /* Header/nav */
+      --bg-card: #102a3a; /* Panels */
+      --accent-blue: #00b7ff; /* RSI cyan-blue */
+      --accent-cyan: #22d6ff; /* Lighter cyan */
+      --accent-glow: rgba(0, 183, 255, 0.35);
+      --text-primary: #d9ecf7;
+      --text-secondary: #9ec3d9;
+      --text-muted: #6e8aa0;
+      --border-color: #143a52;
+      --border-strong: #1a4d68;
       --success: #28ffa7;
       --danger: #ff6b6b;
       --warning: #ffa726;
@@ -29,8 +32,9 @@
 
     html, body {
       height: 100%;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #060a14 100%);
+      font-family: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 70% -10%, rgba(0, 183, 255, 0.06), transparent 60%),
+                  linear-gradient(135deg, #081722 0%, var(--bg-primary) 60%);
       color: var(--text-primary);
       overflow-x: hidden;
     }
@@ -40,14 +44,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 32px;
-      background: linear-gradient(135deg, rgba(10, 14, 26, 0.98), rgba(15, 20, 32, 0.95));
-      backdrop-filter: blur(20px);
-      border-bottom: 2px solid rgba(0, 217, 255, 0.2);
+      padding: 18px 28px;
+      background: linear-gradient(180deg, #0f2a3a, #0b2130);
+      border-bottom: 2px solid var(--border-strong);
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 -1px 0 rgba(255,255,255,0.02);
     }
 
     .header-left {
@@ -89,13 +92,15 @@
     }
 
     .title {
+      font-family: 'Orbitron', 'Rajdhani', system-ui, sans-serif;
       font-size: 28px;
-      font-weight: 900;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), #fff);
+      font-weight: 800;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
     }
 
     .subtitle {
@@ -114,16 +119,17 @@
 
     .stat-chip {
       padding: 12px 20px;
-      background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(91, 208, 255, 0.05));
-      border: 1px solid rgba(0, 217, 255, 0.3);
-      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(0, 183, 255, 0.10), rgba(0, 183, 255, 0.05));
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       min-width: 90px;
       text-align: center;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset, 0 8px 18px rgba(0,0,0,0.35);
     }
 
     .stat-chip::before {
@@ -236,22 +242,23 @@
 
     .btn {
       padding: 12px 20px;
-      background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(91, 208, 255, 0.05));
-      border: 1px solid rgba(0, 217, 255, 0.4);
-      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(0, 183, 255, 0.18), rgba(0, 183, 255, 0.08));
+      border: 1px solid var(--border-strong);
       color: var(--text-primary);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       white-space: nowrap;
+      clip-path: polygon(0% 0%, 96% 0%, 100% 25%, 100% 100%, 4% 100%, 0% 75%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 10px 24px rgba(0,0,0,0.35);
     }
 
     .btn-danger {
-      background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 107, 107, 0.05));
-      border-color: rgba(255, 107, 107, 0.4);
+      background: linear-gradient(180deg, rgba(255, 107, 107, 0.20), rgba(255, 107, 107, 0.08));
+      border-color: rgba(255, 107, 107, 0.5);
     }
 
     .btn-danger:hover {
@@ -261,10 +268,10 @@
     }
 
     .btn:hover {
-      background: linear-gradient(135deg, rgba(0, 217, 255, 0.25), rgba(91, 208, 255, 0.15));
-      border-color: var(--accent-cyan);
+      background: linear-gradient(180deg, rgba(0, 183, 255, 0.28), rgba(0, 183, 255, 0.14));
+      border-color: var(--accent-blue);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+      box-shadow: 0 6px 16px rgba(0, 183, 255, 0.25);
     }
 
     .btn:active {
@@ -294,18 +301,19 @@
     }
 
     .column-header {
-      background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(91, 208, 255, 0.05));
-      border: 1px solid rgba(0, 217, 255, 0.3);
-      border-radius: 12px;
-      padding: 16px 20px;
-      font-size: 16px;
-      font-weight: 700;
+      background: linear-gradient(180deg, rgba(16, 42, 58, 0.95), rgba(10, 29, 42, 0.95));
+      border: 1px solid var(--border-strong);
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 800;
       text-align: center;
       color: var(--accent-cyan);
       text-transform: uppercase;
       letter-spacing: 2px;
       position: relative;
       overflow: hidden;
+      clip-path: polygon(0% 0%, 98% 0%, 100% 25%, 100% 100%, 2% 100%, 0% 75%);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.02) inset;
     }
 
     .column-header::before {
@@ -316,12 +324,21 @@
       width: 4px;
       height: 100%;
       background: linear-gradient(180deg, var(--accent-cyan), var(--accent-blue));
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .column-header::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 24px;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+      opacity: 0.6;
     }
 
     .feed {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      display: block;
       max-height: calc(100vh - 200px);
       overflow-y: auto;
       padding-right: 8px;
@@ -361,14 +378,18 @@
 
     /* Kill Card */
     .kill-card {
-      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(20, 24, 36, 0.8) 100%);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 20px;
+      background: radial-gradient(600px 200px at 10% 0%, rgba(0, 183, 255, 0.08), transparent 50%),
+                  linear-gradient(180deg, rgba(16, 42, 58, 0.95), rgba(10, 29, 42, 0.95));
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 24px;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       transition: all 0.3s ease;
       animation: slideIn 0.4s ease-out;
+      min-height: 120px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset, 0 16px 28px rgba(0,0,0,0.45);
     }
 
     .kill-card.player-kill {
@@ -393,9 +414,9 @@
     }
 
     .kill-card:hover {
-      border-color: rgba(0, 217, 255, 0.4);
+      border-color: var(--accent-blue);
       transform: translateX(4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 24px rgba(0, 183, 255, 0.2);
     }
 
     .kill-card::before {
@@ -406,8 +427,8 @@
       width: 4px;
       height: 100%;
       background: linear-gradient(180deg, var(--accent-cyan), var(--accent-blue));
-      opacity: 0;
-      transition: opacity 0.3s ease;
+      opacity: 0.85;
+      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     .kill-card:hover::before {
@@ -457,16 +478,19 @@
     .kill-content {
       display: flex;
       align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
+      gap: 20px;
+      flex-wrap: nowrap;
+      min-height: 60px;
+      padding: 8px 0;
     }
 
     .player-info {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      flex: 1;
-      min-width: 200px;
+      flex: 0 1 auto;
+      min-width: 120px;
+      max-width: 300px;
     }
 
     .player-name {
@@ -476,6 +500,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      line-height: 1.5;
+      min-height: 24px;
     }
 
     .player-name.killer {
@@ -511,13 +537,15 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 8px 14px;
       background: rgba(91, 208, 255, 0.1);
       border: 1px solid rgba(91, 208, 255, 0.25);
       border-radius: 8px;
       font-size: 13px;
       color: var(--text-secondary);
       font-weight: 500;
+      line-height: 1.4;
+      min-height: 32px;
     }
 
     .ship-icon {
@@ -530,6 +558,8 @@
       font-size: 24px;
       color: var(--accent-cyan);
       font-weight: 700;
+      flex-shrink: 0;
+      line-height: 1;
     }
 
     .kill-description {
@@ -802,8 +832,9 @@
         <input type="text" class="player-input" id="playerNameInput" placeholder="Votre pseudo...">
         <button class="btn-validate" id="btnValidateName" title="Valider le pseudo">✓</button>
       </div>
+      <button class="btn" id="btnStartOverlay" title="Démarrer l'overlay transparent">▶ Démarrer Overlay</button>
+      <button class="btn btn-danger" id="btnStopOverlay" title="Arrêter l'overlay">⏹ Arrêter Overlay</button>
       <button class="btn btn-danger" id="btnClearAll">🗑️ Clear</button>
-      <button class="btn" id="btnCloseOverlay" title="Fermer l'overlay (si lancé)">✕ Fermer Overlay</button>
     </div>
   </header>
 
@@ -1150,6 +1181,11 @@
           addHostility(msg);
         } else if (msg.type === 'player_stats') {
           kdEl.textContent = msg.player_stats?.kd_ratio ?? '0.00';
+        } else if (msg.type === 'overlay_status') {
+          // Afficher une notification pour le statut de l'overlay
+          const message = msg.message || (msg.running ? 'Overlay en cours' : 'Overlay arrêté');
+          showNotification(message);
+          console.log(`[Overlay Status] ${message} (running: ${msg.running})`);
         }
       };
     }
@@ -1166,15 +1202,36 @@
       }
     };
 
-    document.getElementById('btnCloseOverlay').onclick = () => {
+    // Bouton Démarrer Overlay
+    document.getElementById('btnStartOverlay').onclick = () => {
       if (ws && ws.readyState === 1) {
-        ws.send(JSON.stringify({ type: 'close_overlay' }));
-        console.log('✅ Commande de fermeture envoyée à l\'overlay');
+        ws.send(JSON.stringify({ type: 'start_overlay' }));
+        console.log('✅ Commande de démarrage envoyée à l\'overlay');
         
         // Feedback visuel
-        const btn = document.getElementById('btnCloseOverlay');
+        const btn = document.getElementById('btnStartOverlay');
         const originalText = btn.textContent;
-        btn.textContent = '✓ Commande envoyée';
+        btn.textContent = '⏳ Démarrage...';
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 3000);
+      } else {
+        alert('WebSocket non connecté. Impossible d\'envoyer la commande.');
+      }
+    };
+
+    // Bouton Arrêter Overlay
+    document.getElementById('btnStopOverlay').onclick = () => {
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'stop_overlay' }));
+        console.log('✅ Commande d\'arrêt envoyée à l\'overlay');
+        
+        // Feedback visuel
+        const btn = document.getElementById('btnStopOverlay');
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Arrêté';
         btn.style.backgroundColor = '#28ffa7';
         setTimeout(() => {
           btn.textContent = originalText;

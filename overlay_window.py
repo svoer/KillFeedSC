@@ -10,7 +10,6 @@ import asyncio
 import websockets
 import json
 import threading
-import sys
 from datetime import datetime
 from collections import deque
 from typing import Optional, Dict, List
@@ -19,9 +18,16 @@ import time
 # Configuration
 WS_URL = "ws://127.0.0.1:8765"
 MAX_KILLS_DISPLAY = 10
-OVERLAY_WIDTH = 450
-OVERLAY_HEIGHT = 400
+OVERLAY_WIDTH = 360
+OVERLAY_HEIGHT = 300
+MIN_OVERLAY_WIDTH = 240
+MIN_OVERLAY_HEIGHT = 160
 FADE_DURATION = 300  # ms
+
+# Palette RSI-like
+ACCENT_CYAN = '#22d6ff'
+TITLE_BG = '#0e2738'
+CARD_BG = '#102a3a'
 
 class KillEntry:
     """Représente une entrée de kill dans l'overlay"""
@@ -58,11 +64,15 @@ class KillFeedOverlay:
         # Pas de bordures
         self.root.overrideredirect(True)
         
+        # Autoriser le redimensionnement programmatique
+        self.root.resizable(True, True)
+        self.root.minsize(MIN_OVERLAY_WIDTH, MIN_OVERLAY_HEIGHT)
+        
         # Always on top
         self.root.attributes('-topmost', True)
         
-        # Transparence
-        self.root.attributes('-alpha', 0.95)
+        # Transparence (70%)
+        self.root.attributes('-alpha', 0.7)
         
         # Fond transparent (noir = transparent)
         self.root.attributes('-transparentcolor', 'black')
@@ -93,65 +103,161 @@ class KillFeedOverlay:
         self.font_kill = tkfont.Font(family='Segoe UI', size=11, weight='bold')
         self.font_small = tkfont.Font(family='Segoe UI', size=9)
         
+        # Barre de titre pour déplacer l'overlay (plus fine)
+        self.title_bar = tk.Frame(
+            self.root,
+            bg=TITLE_BG,
+            height=18,
+            cursor='fleur'
+        )
+        self.title_bar.place(x=0, y=0, relwidth=1.0)
+        
+        # Logo/Icône de déplacement
+        self.drag_label = tk.Label(
+            self.title_bar,
+            text="",
+            bg=TITLE_BG,
+            fg=ACCENT_CYAN,
+            font=('Segoe UI', 14, 'bold'),
+            cursor='fleur'
+        )
+        self.drag_label.pack(side=tk.LEFT, padx=2)
+        
+        # Titre
+        self.title_label = tk.Label(
+            self.title_bar,
+            text="KILL FEED",
+            bg=TITLE_BG,
+            fg=ACCENT_CYAN,
+            font=('Segoe UI', 8, 'bold'),
+            cursor='fleur'
+        )
+        self.title_label.pack(side=tk.LEFT, padx=5)
+        
+        # Variables pour le drag & drop
+        self._drag_start_x = 0
+        self._drag_start_y = 0
+        
+        # Bind pour déplacer la fenêtre
+        self.title_bar.bind('<Button-1>', self._start_drag)
+        self.title_bar.bind('<B1-Motion>', self._on_drag)
+        self.drag_label.bind('<Button-1>', self._start_drag)
+        self.drag_label.bind('<B1-Motion>', self._on_drag)
+        self.title_label.bind('<Button-1>', self._start_drag)
+        self.title_label.bind('<B1-Motion>', self._on_drag)
+        
         # Bouton CLOSE (rouge, visible, en haut à droite)
         self.btn_close = tk.Button(
-            self.root,
-            text="✕ CLOSE",
+            self.title_bar,
+            text="✕",
             command=self.quit,
             bg='#ff4757',
             fg='white',
             activebackground='#ff1744',
             activeforeground='white',
-            font=('Segoe UI', 9, 'bold'),
+            font=('Segoe UI', 8, 'bold'),
             bd=0,
-            padx=10,
-            pady=4,
+            padx=3,
+            pady=0,
+            highlightthickness=0,
             cursor='hand2',
             relief='flat'
         )
-        self.btn_close.place(x=OVERLAY_WIDTH - 85, y=5)
+        # Placer le bouton close à droite de la barre de titre (centré verticalement)
+        self.btn_close.place(relx=1.0, rely=0.5, x=-6, y=0, anchor='e')
         
-        # Bouton HIDE (orange, pour masquer temporairement)
-        self.is_hidden = False
-        self.btn_hide = tk.Button(
+        # Poignée de redimensionnement (en bas à droite)
+        self.resize_grip = tk.Frame(
             self.root,
-            text="⊟",
-            command=self._toggle_visibility,
-            bg='#ffa726',
-            fg='white',
-            activebackground='#ff9800',
-            activeforeground='white',
-            font=('Segoe UI', 9, 'bold'),
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor='hand2',
-            relief='flat'
+            bg=TITLE_BG,
+            width=14,
+            height=14,
+            cursor='size_nw_se'
         )
-        self.btn_hide.place(x=OVERLAY_WIDTH - 120, y=5)
+        # Positionner avec un ancrage pour suivre la taille de la fenêtre
+        self.resize_grip.place(relx=1.0, rely=1.0, x=-2, y=-2, anchor='se')
+        
+        # Variables pour le resize
+        self._resize_start_x = 0
+        self._resize_start_y = 0
+        self._start_width = OVERLAY_WIDTH
+        self._start_height = OVERLAY_HEIGHT
+        
+        # Bind pour redimensionner
+        self.resize_grip.bind('<Button-1>', self._start_resize)
+        self.resize_grip.bind('<B1-Motion>', self._on_resize_drag)
+        
+        # Mettre la barre de titre et les boutons au-dessus du canvas
+        try:
+            self.canvas.lower()
+            self.title_bar.lift()
+            self.btn_close.lift()
+            self.resize_grip.lift()
+        except Exception:
+            pass
+
+        # Ajuster les éléments UI quand la fenêtre change de taille
+        self.root.bind('<Configure>', self._on_configure)
         
     def _setup_keybindings(self):
         """Configure les raccourcis clavier"""
-        # F12 pour masquer/afficher
-        self.root.bind('<F12>', lambda e: self._toggle_visibility())
-        
         # Ctrl+Q pour quitter
         self.root.bind('<Control-q>', lambda e: self.quit())
         
         # Escape pour quitter
         self.root.bind('<Escape>', lambda e: self.quit())
-        
-    def _toggle_visibility(self):
-        """Masque/affiche l'overlay"""
-        self.is_hidden = not self.is_hidden
-        if self.is_hidden:
-            # Masquer complètement
-            self.root.withdraw()
-            self.btn_hide.config(text="⊞", bg='#28ffa7')
-        else:
-            # Réafficher
-            self.root.deiconify()
-            self.btn_hide.config(text="⊟", bg='#ffa726')
+    
+    def _start_drag(self, event):
+        """Commence le déplacement de la fenêtre"""
+        self._drag_start_x = event.x
+        self._drag_start_y = event.y
+    
+    def _on_drag(self, event):
+        """Déplace la fenêtre"""
+        x = self.root.winfo_x() + event.x - self._drag_start_x
+        y = self.root.winfo_y() + event.y - self._drag_start_y
+        self.root.geometry(f'+{x}+{y}')
+    
+    def _start_resize(self, event):
+        """Commence le redimensionnement via la poignée"""
+        self._resize_start_x = event.x_root
+        self._resize_start_y = event.y_root
+        self._start_width = self.root.winfo_width()
+        self._start_height = self.root.winfo_height()
+    
+    def _on_resize_drag(self, event):
+        """Redimensionne la fenêtre pendant le drag"""
+        try:
+            dx = event.x_root - self._resize_start_x
+            dy = event.y_root - self._resize_start_y
+            new_w = max(MIN_OVERLAY_WIDTH, self._start_width + int(dx))
+            new_h = max(MIN_OVERLAY_HEIGHT, self._start_height + int(dy))
+            # Limiter à l'écran
+            screen_w = self.root.winfo_screenwidth()
+            screen_h = self.root.winfo_screenheight()
+            new_w = min(new_w, screen_w - 20)
+            new_h = min(new_h, screen_h - 20)
+            # Conserver la position
+            x = self.root.winfo_x()
+            y = self.root.winfo_y()
+            self.root.geometry(f'{new_w}x{new_h}+{x}+{y}')
+        except Exception:
+            pass
+    
+    def _on_configure(self, event):
+        """Assure la superposition correcte des éléments UI"""
+        try:
+            # Garder la barre de titre et les boutons au-dessus du canvas
+            if hasattr(self, 'canvas'):
+                self.canvas.lower()
+            if hasattr(self, 'title_bar'):
+                self.title_bar.lift()
+            if hasattr(self, 'btn_close'):
+                self.btn_close.lift()
+            if hasattr(self, 'resize_grip'):
+                self.resize_grip.lift()
+        except Exception:
+            pass
     
     def _format_kill_text(self, evt: Dict) -> tuple[str, str]:
         """Formate le texte d'un kill et retourne (texte, couleur)"""
@@ -240,8 +346,8 @@ class KillFeedOverlay:
                 anchor='nw'
             )
         
-        # Afficher les kills
-        y_offset = 40
+        # Afficher les kills (commencer en dessous de la barre de titre)
+        y_offset = 24
         line_height = 35
         
         for i, kill in enumerate(self.kills):
@@ -277,9 +383,11 @@ class KillFeedOverlay:
         
         # Afficher les instructions en bas (très discret) seulement si aucun kill
         if len(self.kills) == 0:
+            w = self.root.winfo_width() or OVERLAY_WIDTH
+            h = self.root.winfo_height() or OVERLAY_HEIGHT
             self.canvas.create_text(
-                OVERLAY_WIDTH // 2, OVERLAY_HEIGHT // 2,
-                text="En attente de kills...\n\nF12: Masquer/Afficher\nEsc: Quitter",
+                w // 2, h // 2,
+                text="En attente de kills...\n\nEsc: Quitter\nCtrl+Q: Quitter",
                 fill='#4a5568',
                 font=self.font_small,
                 anchor='center',
@@ -379,8 +487,8 @@ def main():
     print("  - Serveur KillFeedSC lancé (kill_feed_local.py)")
     print()
     print("Raccourcis:")
-    print("  F12  : Masquer/Afficher l'overlay")
-    print("  Esc  : Quitter")
+    print("  Esc    : Quitter")
+    print("  Ctrl+Q : Quitter")
     print()
     print("Démarrage de l'overlay...")
     print()

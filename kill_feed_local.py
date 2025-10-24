@@ -30,6 +30,7 @@ Fichier optionnel: config.ini (dans le même dossier):
 from __future__ import annotations
 import asyncio
 import websockets
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 import json
 import os
 import re
@@ -39,6 +40,7 @@ import traceback
 import threading
 import socketserver
 import random
+import subprocess
 from http.server import SimpleHTTPRequestHandler
 from configparser import ConfigParser
 from collections import deque
@@ -178,6 +180,10 @@ ATTACKER_CACHE_TTL = 15.0  # 15 secondes
 # Clients WebSocket
 WS_CLIENTS: "set[websockets.WebSocketServerProtocol]" = set()
 WS_LOCK = asyncio.Lock()
+
+# Processus overlay
+OVERLAY_PROCESS: Optional[subprocess.Popen] = None
+OVERLAY_LOCK = threading.Lock()
 
 # Expressions régulières améliorées pour une meilleure détection
 # Variantes de détection pilote->vaisseau
@@ -519,6 +525,72 @@ async def broadcast(evt: dict):
         async with WS_LOCK:
             for ws in to_drop:
                 WS_CLIENTS.discard(ws)
+
+def start_overlay():
+    """Démarre le processus overlay"""
+    global OVERLAY_PROCESS
+    
+    with OVERLAY_LOCK:
+        # Vérifier si l'overlay est déjà en cours
+        if OVERLAY_PROCESS is not None and OVERLAY_PROCESS.poll() is None:
+            log_print("[Overlay] L'overlay est déjà en cours d'exécution")
+            return False
+        
+        try:
+            # Lancer overlay_window.py dans un nouveau processus
+            overlay_script = Path(__file__).parent / "overlay_window.py"
+            if not overlay_script.exists():
+                log_print(f"[Overlay] ERREUR: {overlay_script} introuvable")
+                return False
+            
+            # Ne pas ouvrir une nouvelle console Windows pour l'overlay (GUI Tkinter)
+            creation_flags = 0
+            if sys.platform == 'win32':
+                creation_flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+            OVERLAY_PROCESS = subprocess.Popen(
+                [sys.executable, str(overlay_script)],
+                creationflags=creation_flags
+            )
+            log_print(f"[Overlay] Démarré avec PID {OVERLAY_PROCESS.pid}")
+            return True
+            
+        except Exception as e:
+            log_print(f"[Overlay] Erreur au démarrage: {e}")
+            OVERLAY_PROCESS = None
+            return False
+
+def stop_overlay():
+    """Arrête le processus overlay"""
+    global OVERLAY_PROCESS
+    
+    with OVERLAY_LOCK:
+        if OVERLAY_PROCESS is None or OVERLAY_PROCESS.poll() is not None:
+            log_print("[Overlay] L'overlay n'est pas en cours d'exécution")
+            return False
+        
+        try:
+            OVERLAY_PROCESS.terminate()
+            OVERLAY_PROCESS.wait(timeout=5)
+            log_print("[Overlay] Arrêté avec succès")
+            OVERLAY_PROCESS = None
+            return True
+        except Exception as e:
+            log_print(f"[Overlay] Erreur à l'arrêt: {e}")
+            try:
+                OVERLAY_PROCESS.kill()
+                OVERLAY_PROCESS = None
+            except:
+                pass
+            return False
+
+def is_overlay_running():
+    """Vérifie si l'overlay est en cours d'exécution"""
+    global OVERLAY_PROCESS
+    
+    with OVERLAY_LOCK:
+        if OVERLAY_PROCESS is None:
+            return False
+        return OVERLAY_PROCESS.poll() is None
 
 def extract_driver(line: str) -> bool:
     """Capture des associations pilote->vaisseau."""
@@ -1051,10 +1123,40 @@ async def ws_handler(ws):
                 data = json.loads(message)
                 cmd_type = data.get("type")
                 
-                # Commande pour fermer l'overlay
-                if cmd_type == "close_overlay":
+                # Commande pour démarrer l'overlay
+                if cmd_type == "start_overlay":
+                    success = await asyncio.get_event_loop().run_in_executor(None, start_overlay)
+                    await ws.send(json.dumps({
+                        "type": "overlay_status",
+                        "running": success,
+                        "message": "Overlay démarré" if success else "Erreur au démarrage de l'overlay"
+                    }))
+                    debug_print(f"[WS] Commande start_overlay: {'succès' if success else 'échec'}")
+                
+                # Commande pour arrêter l'overlay
+                elif cmd_type == "stop_overlay":
+                    success = await asyncio.get_event_loop().run_in_executor(None, stop_overlay)
+                    await ws.send(json.dumps({
+                        "type": "overlay_status",
+                        "running": False if success else is_overlay_running(),
+                        "message": "Overlay arrêté" if success else "Erreur à l'arrêt de l'overlay"
+                    }))
+                    debug_print(f"[WS] Commande stop_overlay: {'succès' if success else 'échec'}")
+                
+                # Commande pour vérifier le statut de l'overlay
+                elif cmd_type == "check_overlay_status":
+                    running = await asyncio.get_event_loop().run_in_executor(None, is_overlay_running)
+                    await ws.send(json.dumps({
+                        "type": "overlay_status",
+                        "running": running
+                    }))
+                
+                # Commande pour fermer l'overlay (ancienne méthode, garde pour compatibilité)
+                elif cmd_type == "close_overlay":
                     # Broadcaster la commande à tous les clients (y compris l'overlay)
                     await broadcast({"type": "close_overlay"})
+                    # Arrêter aussi le processus
+                    await asyncio.get_event_loop().run_in_executor(None, stop_overlay)
                     debug_print("[WS] Commande close_overlay envoyée")
                     
             except json.JSONDecodeError:
@@ -1062,6 +1164,9 @@ async def ws_handler(ws):
             except Exception as e:
                 if DEBUG:
                     print(f"[WS] Erreur traitement message: {e}")
+    except (ConnectionClosedError, ConnectionClosedOK, ConnectionResetError, OSError) as e:
+        # Déconnexion cliente inattendue: ignorer proprement
+        debug_print(f"[WS] Client disconnected: {e}")
     except Exception:
         if DEBUG:
             traceback.print_exc()
@@ -1070,10 +1175,32 @@ async def ws_handler(ws):
             WS_CLIENTS.discard(ws)
 
 async def ws_server():
-    server = await websockets.serve(
-        ws_handler, WS_HOST, WS_PORT, ping_interval=20, ping_timeout=20
-    )
-    log_print(f"[WS] listening on ws://{WS_HOST}:{WS_PORT}")
+    # Créer le serveur WebSocket
+    try:
+        server = await websockets.serve(
+            ws_handler, WS_HOST, WS_PORT, 
+            ping_interval=20, ping_timeout=20
+        )
+        log_print(f"[WS] listening on ws://{WS_HOST}:{WS_PORT}")
+    except OSError as e:
+        if e.errno == 10048:  # Port déjà utilisé (Windows)
+            log_print("")
+            log_print("=" * 60)
+            log_print(f"ERREUR: Le port {WS_PORT} est déjà utilisé!")
+            log_print("=" * 60)
+            log_print("")
+            log_print("Une instance de KillFeedSC est probablement déjà en cours.")
+            log_print("")
+            log_print("Solutions:")
+            log_print("  1. Fermez l'autre instance manuellement")
+            log_print("  2. Lancez 'kill_processes.bat' pour tout fermer")
+            log_print("  3. Utilisez 'start_overlay_safe.bat' la prochaine fois")
+            log_print("")
+            log_print("=" * 60)
+            raise SystemExit(1)  # Sortie propre
+        else:
+            raise
+    
     await asyncio.Future()  # run forever
 
 # ===================== PARSE LOOP =====================
