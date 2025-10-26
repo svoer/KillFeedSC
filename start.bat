@@ -18,8 +18,6 @@ if %ERRORLEVEL% EQU 0 (
     timeout /t 2 /nobreak >nul
 )
 
-echo Lancement du serveur...
-
 REM Detecter l'interpreteur Python
 set "_PY=python"
 where python >nul 2>&1
@@ -31,8 +29,46 @@ if errorlevel 1 (
   )
 )
 
+REM Vérifier que Python est disponible
+%_PY% --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERREUR] Python n'est pas installe ou n'est pas dans le PATH
+    echo Installez Python depuis https://www.python.org/downloads/
+    pause
+    exit /b 1
+)
+
+REM Vérifier/créer l'environnement virtuel
+if not exist ".venv" (
+    echo Creation de l'environnement virtuel...
+    %_PY% -m venv .venv
+    if errorlevel 1 (
+        echo [ERREUR] Impossible de creer l'environnement virtuel
+        pause
+        exit /b 1
+    )
+)
+
+REM Activer l'environnement virtuel
+call .venv\Scripts\activate.bat
+
+REM Installer/Mettre à jour les dépendances
+if exist "requirements.txt" (
+    echo Installation des dependances...
+    python -m pip install --upgrade pip >nul 2>&1
+    python -m pip install -r requirements.txt --quiet
+    if errorlevel 1 (
+        echo [AVERTISSEMENT] Erreur lors de l'installation des dependances
+        echo Tentative de continuer quand meme...
+    )
+) else (
+    echo [AVERTISSEMENT] requirements.txt introuvable
+)
+
+echo Lancement du serveur...
+
 REM Lancement du serveur dans une console MINIMISEE (la fenetre batch se ferme)
-start "Kill Feed Server" /min cmd /c %_PY% kill_feed_local.py
+start "Kill Feed Server" /min cmd /c ".venv\Scripts\python.exe kill_feed_local.py"
 
 REM Attente courte pour laisser le serveur initialiser
 echo Demarrage en cours...

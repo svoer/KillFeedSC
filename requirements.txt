@@ -1,0 +1,21 @@
+# ============================================
+# KillFeedSC - Dependencies
+# ============================================
+
+# Core dependencies
+# -----------------
+# WebSocket server/client pour la communication temps réel
+websockets>=12.0
+
+# Note: Les modules suivants font partie de la bibliothèque standard Python
+# et n'ont pas besoin d'être installés :
+# - asyncio : Programmation asynchrone
+# - tkinter : Interface graphique (overlay)
+# - json : Manipulation JSON
+# - configparser : Lecture config.ini
+# - threading : Multi-threading
+# - http.server : Serveur HTTP
+# - pathlib, os, sys : Gestion fichiers/système
+# - datetime, time : Gestion du temps
+# - re : Expressions régulières
+# - collections, dataclasses, typing : Structures de données
